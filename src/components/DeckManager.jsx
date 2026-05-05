@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { CARD_THEMES } from '../utils/cardData'
 import CreateDeckModal from './CreateDeckModal'
 
-export default function DeckManager({ decks, onPlay, onDelete, onToggleFavorite, onAddDeck }) {
+export default function DeckManager({ decks, onPlay, onDelete, onToggleFavorite, onAddDeck, apiRole }) {
   const [showCreate, setShowCreate] = useState(false)
   const [filter, setFilter] = useState('all')
+
+  const canWrite = apiRole === 'ADMIN' || apiRole === 'WRITER'
+  const canDelete = apiRole === 'ADMIN'
 
   const filtered = filter === 'favorites' ? decks.filter(d => d.favorite) : decks
 
@@ -25,7 +28,9 @@ export default function DeckManager({ decks, onPlay, onDelete, onToggleFavorite,
             ⭐ Favorites ({decks.filter(d => d.favorite).length})
           </button>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreate(true)}>+ New Deck</button>
+        {canWrite && (
+          <button className="btn-primary" onClick={() => setShowCreate(true)}>+ New Deck</button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -41,6 +46,7 @@ export default function DeckManager({ decks, onPlay, onDelete, onToggleFavorite,
               onPlay={() => onPlay(deck)}
               onDelete={() => onDelete(deck.id)}
               onToggleFavorite={() => onToggleFavorite(deck.id)}
+              canDelete={canDelete}
             />
           ))}
         </div>
@@ -56,7 +62,7 @@ export default function DeckManager({ decks, onPlay, onDelete, onToggleFavorite,
   )
 }
 
-function DeckCard({ deck, onPlay, onDelete, onToggleFavorite }) {
+function DeckCard({ deck, onPlay, onDelete, onToggleFavorite, canDelete }) {
   const themeInfo = CARD_THEMES[deck.cardTheme]
   return (
     <div className="deck-card">
@@ -81,7 +87,9 @@ function DeckCard({ deck, onPlay, onDelete, onToggleFavorite }) {
           {deck.favorite ? '⭐' : '☆'}
         </button>
         <button className="btn-primary btn-sm" onClick={onPlay}>Play</button>
-        <button className="btn-danger btn-sm" onClick={onDelete} title="Delete">🗑</button>
+        {canDelete && (
+          <button className="btn-danger btn-sm" onClick={onDelete} title="Delete">🗑</button>
+        )}
       </div>
     </div>
   )

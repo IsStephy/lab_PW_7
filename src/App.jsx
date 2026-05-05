@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { loadSettings, saveSettings, saveReplay } from './utils/storage'
-import { apiSaveReplay } from './utils/api'
+import { apiSaveReplay, setApiRole } from './utils/api'
 import { useDecks } from './hooks/useDecks'
 import Header from './components/Header'
 import DeckManager from './components/DeckManager'
@@ -17,7 +17,13 @@ export default function App() {
   const [gameConfig, setGameConfig] = useState(null)
   const [activeReplay, setActiveReplay] = useState(null)
   const [theme, setTheme] = useState(() => loadSettings().theme || 'light')
+  const [apiRole, setApiRoleState] = useState('ADMIN')
   const { decks, addDeck, deleteDeck, toggleFavorite, updateBestScore } = useDecks()
+
+  const handleRoleChange = (role) => {
+    setApiRole(role)
+    setApiRoleState(role)
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -45,11 +51,13 @@ export default function App() {
         onMultiplayer={() => setView('lobby')}
         onReplays={() => setView('replays')}
         onChangelog={() => setView('changelog')}
+        apiRole={apiRole}
+        onRoleChange={handleRoleChange}
       />
       <main className="main-content">
         {view === 'decks' && (
           <DeckManager decks={decks} onPlay={handlePlay} onDelete={deleteDeck}
-            onToggleFavorite={toggleFavorite} onAddDeck={addDeck} />
+            onToggleFavorite={toggleFavorite} onAddDeck={addDeck} apiRole={apiRole} />
         )}
         {view === 'settings' && selectedDeck && (
           <GameSettings deck={selectedDeck} onStart={handleStartGame} onBack={() => setView('decks')} />

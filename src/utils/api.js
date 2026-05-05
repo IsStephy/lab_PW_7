@@ -2,11 +2,23 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 let _token = null
 let _tokenExpiry = 0
+let _role = 'ADMIN'
+
+export function setApiRole(role) {
+  if (role === _role) return
+  _role = role
+  _token = null
+  _tokenExpiry = 0
+}
+
+export function getApiRole() {
+  return _role
+}
 
 async function getToken() {
   // Refresh 5 s before expiry (token lives 60 s)
   if (_token && Date.now() < _tokenExpiry - 5000) return _token
-  const res = await fetch(`${API_BASE}/token?role=ADMIN`)
+  const res = await fetch(`${API_BASE}/token?role=${_role}`)
   if (!res.ok) throw new Error('Failed to fetch auth token')
   const data = await res.json()
   _token = data.access_token
