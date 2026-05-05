@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { loadReplays, deleteReplay } from '../utils/storage'
+import { apiGetReplays, apiDeleteReplay } from '../utils/api'
 import { CARD_THEMES } from '../utils/cardData'
 
 function fmt(s) {
@@ -11,11 +12,28 @@ function fmtDate(ts) {
 }
 
 export default function ReplaysScreen({ onBack, onWatch }) {
-  const [replays, setReplays] = useState(() => loadReplays())
+  const [replays, setReplays] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiGetReplays()
+      .then(data => setReplays(data.items))
+      .catch(() => setReplays(loadReplays()))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleDelete = (id) => {
-    deleteReplay(id)
-    setReplays(r => r.filter(r => r.id !== id))
+    setReplays(prev => prev.filter(r => r.id !== id))
+    apiDeleteReplay(id).catch(() => deleteReplay(id))
+  }
+
+  if (loading) {
+    return (
+      <div className="replays-screen">
+        <div className="replays-header"><h2>🎬 Saved Replays</h2></div>
+        <div className="empty-state"><p>Loading…</p></div>
+      </div>
+    )
   }
 
   if (replays.length === 0) {

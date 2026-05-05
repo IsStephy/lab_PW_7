@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { loadSettings, saveSettings, saveReplay } from './utils/storage'
+import { apiSaveReplay } from './utils/api'
 import { useDecks } from './hooks/useDecks'
 import Header from './components/Header'
 import DeckManager from './components/DeckManager'
@@ -28,7 +29,9 @@ export default function App() {
   const handleWin = ({ moves, time, gridId }) => updateBestScore(selectedDeck.id, gridId, { moves, time })
   const handleBack = () => { setView('decks'); setSelectedDeck(null); setGameConfig(null) }
 
-  const handleSaveReplay = (replay) => saveReplay(replay)
+  const handleSaveReplay = (replay) => {
+    apiSaveReplay(replay).catch(() => saveReplay(replay))
+  }
 
   const handleWatchReplay = (replay) => { setActiveReplay(replay); setView('replay-view') }
 

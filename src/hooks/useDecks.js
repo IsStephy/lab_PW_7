@@ -1,41 +1,64 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { loadDecks, saveDecks } from '../utils/storage'
+import { apiGetDecks, apiCreateDeck, apiUpdateDeck, apiDeleteDeck } from '../utils/api'
 
 export function useDecks() {
-  const [decks, setDecks] = useState(loadDecks)
+  const [decks, setDecks] = useState([])
 
-  const commit = useCallback((next) => {
-    setDecks(next)
-    saveDecks(next)
+  // Load from API on mount; fall back to localStorage if backend is unreachable
+  useEffect(() => {
+    apiGetDecks()
+      .then(data => setDecks(data.items))
+      .catch(() => setDecks(loadDecks()))
   }, [])
 
   const addDeck = useCallback((name, cardTheme) => {
-    commit([...decks, {
+    const deck = {
       id: Date.now().toString(),
       name,
       cardTheme,
       favorite: false,
       createdAt: Date.now(),
       bestScores: {},
-    }])
-  }, [decks, commit])
+    }
+    setDecks(prev => [...prev, deck])
+    apiCreateDeck(deck).catch(() =>
+      setDecks(prev => { saveDecks(prev); return prev })
+    )
+  }, [])
 
   const deleteDeck = useCallback((id) => {
-    commit(decks.filter(d => d.id !== id))
-  }, [decks, commit])
+    setDecks(prev => {
+      const next = prev.filter(d => d.id !== id)
+      apiDeleteDeck(id).catch(() => saveDecks(next))
+      return next
+    })
+  }, [])
 
   const toggleFavorite = useCallback((id) => {
-    commit(decks.map(d => d.id === id ? { ...d, favorite: !d.favorite } : d))
-  }, [decks, commit])
+    setDecks(prev => {
+      const deck = prev.find(d => d.id === id)
+      if (!deck) return prev
+      const updates = { favorite: !deck.favorite }
+      const next = prev.map(d => d.id === id ? { ...d, ...updates } : d)
+      apiUpdateDeck(id, updates).catch(() => saveDecks(next))
+      return next
+    })
+  }, [])
 
   const updateBestScore = useCallback((id, gridId, score) => {
-    commit(decks.map(d => {
-      if (d.id !== id) return d
-      const cur = d.bestScores[gridId]
+    setDecks(prev => {
+      const deck = prev.find(d => d.id === id)
+      if (!deck) return prev
+      const cur = deck.bestScores[gridId]
       const better = !cur || score.moves < cur.moves || (score.moves === cur.moves && score.time < cur.time)
-      return better ? { ...d, bestScores: { ...d.bestScores, [gridId]: score } } : d
-    }))
-  }, [decks, commit])
+      if (!better) return prev
+      const bestScores = { ...deck.bestScores, [gridId]: score }
+      const next = prev.map(d => d.id === id ? { ...d, bestScores } : d)
+      apiUpdateDeck(id, { bestScores }).catch(() => saveDecks(next))
+      return next
+    })
+  }, [])
 
   return { decks, addDeck, deleteDeck, toggleFavorite, updateBestScore }
 }
