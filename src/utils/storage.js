@@ -1,6 +1,6 @@
-const DECKS_KEY = 'mcg-decks'
-const SETTINGS_KEY = 'mcg-settings'
-const REPLAYS_KEY = 'mcg-replays'
+const DECKS_KEY = 'lab7-mcg-decks'
+const SETTINGS_KEY = 'lab7-mcg-settings'
+const REPLAYS_KEY = 'lab7-mcg-replays'
 const MAX_REPLAYS = 30
 
 function defaultDecks() {
